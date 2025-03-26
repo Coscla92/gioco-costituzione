@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Gioco Principi Costituzionali</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    h2 {
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .box {
+      width: 30%;
+      min-height: 300px;
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .box h3 {
+      text-align: center;
+    }
+    .item {
+      background: #dbeafe;
+      border: 1px solid #60a5fa;
+      border-radius: 5px;
+      padding: 10px;
+      margin: 5px;
+      cursor: grab;
+    }
+    .correct {
+      background-color: #bbf7d0;
+    }
+    .wrong {
+      background-color: #fecaca;
+    }
+    #reset-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #reset-btn:hover {
+      background-color: #4338ca;
+    }
+    #scoreboard {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Trascina i diritti e principi nella categoria corretta</h2>
+
+  <button id="reset-btn" onclick="resetGame()">🔄 Reset Gioco</button>
+  <div id="scoreboard">✅ Corrette: 0 | ❌ Sbagliate: 0</div>
+
+  <div class="container">
+    <div class="box" ondrop="drop(event)" ondragover="allowDrop(event)" data-category="A">
+      <h3>🟢 Categoria A<br>Principi sociali e individuali</h3>
+    </div>
+    <div class="box" ondrop="drop(event)" ondragover="allowDrop(event)" data-category="B">
+      <h3>🟡 Categoria B<br>Desideri, abitudini e preferenze</h3>
+    </div>
+    <div class="box" ondrop="drop(event)" ondragover="allowDrop(event)" data-category="C">
+      <h3>🔴 Categoria C<br>Regole discutibili o discriminatorie</h3>
+    </div>
+  </div>
+
+  <h3>🧩 Elementi da trascinare:</h3>
+  <div id="items" class="container"></div>
+
+  <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_d8915dc6a5.mp3"></audio>
+  <audio id="error-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_bf4f36c44d.mp3"></audio>
+
+  <script>
+    const items = [
+      { text: "Libertà di parola", category: "A" },
+      { text: "Uguaglianza di tutti i cittadini", category: "A" },
+      { text: "Diritto all’istruzione", category: "A" },
+      { text: "Diritto al lavoro", category: "A" },
+      { text: "Libertà di religione", category: "A" },
+      { text: "Diritto alla salute", category: "A" },
+      { text: "Diritto di voto", category: "A" },
+      { text: "Solidarietà sociale", category: "A" },
+      { text: "Legalità", category: "A" },
+      { text: "Rispetto della dignità umana", category: "A" },
+      { text: "Protezione dell’ambiente", category: "A" },
+      { text: "Ripudio della guerra", category: "A" },
+      { text: "Libertà di associazione", category: "A" },
+      { text: "Tutela delle minoranze", category: "A" },
+      { text: "Separazione dei poteri", category: "A" },
+      { text: "Diritto alla privacy", category: "A" },
+      { text: "Libertà di stampa", category: "A" },
+      { text: "Diritto di sciopero", category: "A" },
+      { text: "Parità tra uomo e donna", category: "A" },
+      { text: "Diritto a mangiare gelato ogni giorno", category: "B" },
+      { text: "Diritto ad avere 5 settimane di vacanza ogni mese", category: "B" },
+      { text: "Diritto ad avere sempre il Wi-Fi gratuito ovunque", category: "B" },
+      { text: "Diritto a una pizza gratis ogni venerdì", category: "B" },
+      { text: "Obbligo per tutti di svegliarsi alle 10:00", category: "B" },
+      { text: "Diritto di non fare mai i compiti", category: "B" },
+      { text: "Libertà di decidere quando è domenica", category: "B" },
+      { text: "Supremazia del colore preferito", category: "C" },
+      { text: "Privilegio dei cittadini con capelli biondi", category: "C" },
+      { text: "Obbligo di tifare la stessa squadra", category: "C" },
+      { text: "Libertà di ignorare i semafori rossi", category: "C" },
+      { text: "Diritto al trono per chi ha più follower", category: "C" },
+      { text: "Obbligo di seguire la moda del momento", category: "C" },
+      { text: "Obbligo di far parte di un solo gruppo", category: "C" },
+      { text: "Diritto di ignorare le leggi noiose", category: "C" }
+    ];
+
+    const itemContainer = document.getElementById("items");
+    const successSound = document.getElementById("success-sound");
+    const errorSound = document.getElementById("error-sound");
+    let correctCount = 0;
+    let wrongCount = 0;
+
+    function updateScore() {
+      document.getElementById("scoreboard").textContent = `✅ Corrette: ${correctCount} | ❌ Sbagliate: ${wrongCount}`;
+    }
+
+    function resetGame() {
+      correctCount = 0;
+      wrongCount = 0;
+      updateScore();
+      itemContainer.innerHTML = "";
+      items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.textContent = item.text;
+        div.setAttribute("draggable", true);
+        div.setAttribute("id", "item-" + index);
+        div.dataset.category = item.category;
+        div.ondragstart = drag;
+        itemContainer.appendChild(div);
+      });
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const draggedItem = document.getElementById(data);
+      const targetBox = ev.currentTarget;
+      const correctCategory = draggedItem.dataset.category;
+      const targetCategory = targetBox.dataset.category;
+
+      if (correctCategory === targetCategory) {
+        draggedItem.classList.add("correct");
+        draggedItem.classList.remove("wrong");
+        targetBox.appendChild(draggedItem);
+        correctCount++;
+        successSound.play();
+      } else {
+        draggedItem.classList.add("wrong");
+        draggedItem.classList.remove("correct");
+        wrongCount++;
+        errorSound.play();
+        alert("❌ Scelta sbagliata! Prova un'altra categoria.");
+      }
+      updateScore();
+    }
+
+    resetGame();
+  </script>
+</body>
+</html>
